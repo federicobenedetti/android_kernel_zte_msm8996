@@ -3146,6 +3146,8 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
 		break;
 	}
 
+	dwc->eps[1]->endpoint.maxpacket = dwc->gadget.ep0->maxpacket;
+
 	/* Enable USB2 LPM Capability */
 
 	if ((dwc->revision > DWC3_REVISION_194A)
@@ -3233,8 +3235,11 @@ static void dwc3_gadget_wakeup_interrupt(struct dwc3 *dwc, bool remote_wakeup)
 
 		/*
 		 * In case of remote wake up dwc3_gadget_wakeup_work()
-		 * is doing pm_runtime_get_sync().
+		 * is doing pm_runtime_get_sync(). But mark last wakeup
+		 * event here to prevent runtime_suspend happening before this
+		 * wakeup event is processed.
 		 */
+		pm_runtime_mark_last_busy(dwc->dev);
 		dev_dbg(dwc->dev, "Notify OTG from %s\n", __func__);
 		dwc->b_suspend = false;
 		dwc3_notify_event(dwc,
